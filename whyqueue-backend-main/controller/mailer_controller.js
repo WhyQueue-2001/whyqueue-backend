@@ -1,28 +1,36 @@
-const { sendOtpEmail } = require('../model/mail_otp'); // Email model
+const { sendOtpEmail, sendCredentialEmail } = require('../model/mail_otp');
 
-// Controller to handle OTP sending via email
-const sendOtp = async (req, res) => {
-  const { email, otp } = req.body;
+// Controller to handle sending email
+const sendEmail = async (req, res) => {
+  const { email, otp, username, password } = req.body;
 
-  // Validate the request body
-  if (!email || !otp) {
-    return res.status(400).json({ message: 'Email and OTP are required' });
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
   }
 
   try {
-    // Call the model to send the OTP email
-    const result = await sendOtpEmail(email, otp);
+    let result;
 
-    // Send the response based on the result
+    if (otp) {
+      // Send OTP email
+      result = await sendOtpEmail(email, otp);
+    } else if (username && password) {
+      // Send username and password email
+      result = await sendCredentialEmail(email, username, password);
+    } else {
+      return res.status(400).json({ message: 'Invalid request parameters' });
+    }
+
     if (result.success) {
       res.status(200).json({ message: result.message });
     } else {
       res.status(500).json({ message: result.message });
     }
+
   } catch (error) {
-    console.error('Error sending OTP:', error);
-    res.status(500).json({ message: 'Failed to send OTP.' });
+    console.error('Error sending email:', error);
+    res.status(500).json({ message: 'Failed to send email.' });
   }
 };
 
-module.exports = { sendOtp };
+module.exports = { sendEmail };
